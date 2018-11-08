@@ -23,4 +23,10 @@ public:
 	
 	UFUNCTION(Exec, BlueprintCallable, Category = "EXEC")
 	void Join(const FString& Address);
+
+	UFUNCTION(Exec, BlueprintCallable, Category = "EXEC")
+	void LoadMenu();
+
+private:
+	TSubclassOf<class UUserWidget> MenuClass;
 };
