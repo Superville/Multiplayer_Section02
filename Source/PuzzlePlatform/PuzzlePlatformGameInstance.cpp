@@ -28,6 +28,17 @@ void UPuzzlePlatformGameInstance::Init()
 	UE_LOG(LogTemp, Warning, TEXT("INIT!"));
 }
 
+APlayerController* UPuzzlePlatformGameInstance::GetPC()
+{
+	UWorld* World = GetWorld();
+	if (!ensure(World != nullptr)) return nullptr;
+
+	auto LP = World->GetFirstLocalPlayerFromController();
+	if (!ensure(LP != nullptr)) return nullptr;
+
+	return LP->GetPlayerController(World);
+}
+
 void UPuzzlePlatformGameInstance::LoadMenu()
 {
 	if (!ensure(MenuClass)) return;
@@ -36,6 +47,15 @@ void UPuzzlePlatformGameInstance::LoadMenu()
 	if (!ensure(MenuWidget)) return;
 
 	MenuWidget->AddToViewport();
+
+	auto PC = GetPC();
+	if (!ensure(PC != nullptr)) return;
+
+	FInputModeUIOnly InputModeData;
+	InputModeData.SetWidgetToFocus(MenuWidget->TakeWidget());
+	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	PC->SetInputMode(InputModeData);
+	PC->bShowMouseCursor = true;
 }
 
 void UPuzzlePlatformGameInstance::Host()
@@ -61,13 +81,7 @@ void UPuzzlePlatformGameInstance::Join(const FString& Address)
 
 	Engine->AddOnScreenDebugMessage(0, 2, FColor::Green, FString::Printf(TEXT("JOIN %s"), *Address));
 
-	UWorld* World = GetWorld();
-	if (!ensure(World != nullptr)) return;
-
-	auto LP = World->GetFirstLocalPlayerFromController();
-	if (!ensure(LP != nullptr)) return;
-
-	auto PC = LP->GetPlayerController(World);
+	auto PC = GetPC();
 	if (!ensure(PC != nullptr)) return;
 	PC->ClientTravel(Address, ETravelType::TRAVEL_Absolute);
 }
