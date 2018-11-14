@@ -8,6 +8,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "PlatformTrigger.h"
 #include "Blueprint/UserWidget.h"
+#include "MenuSystem/MainMenuWidget.h"
 
 
 UPuzzlePlatformGameInstance::UPuzzlePlatformGameInstance(const FObjectInitializer& ObjectInitializer) :
@@ -16,16 +17,16 @@ UPuzzlePlatformGameInstance::UPuzzlePlatformGameInstance(const FObjectInitialize
 	ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/MenuSystem/WBP_MainMenu"));
 	if (!ensure(MenuBPClass.Class)) return;
 
-	MenuClass = MenuBPClass.Class;
+	MainMenuClass = MenuBPClass.Class;
 	
-	UE_LOG(LogTemp, Warning, TEXT("CONSTRUCTOR! %s"), *MenuClass->GetName());
+//	UE_LOG(LogTemp, Warning, TEXT("CONSTRUCTOR! %s"), *MenuClass->GetName());
 }
 
 void UPuzzlePlatformGameInstance::Init()
 {
 	Super::Init();
 
-	UE_LOG(LogTemp, Warning, TEXT("INIT!"));
+//	UE_LOG(LogTemp, Warning, TEXT("INIT!"));
 }
 
 APlayerController* UPuzzlePlatformGameInstance::GetPC()
@@ -41,25 +42,22 @@ APlayerController* UPuzzlePlatformGameInstance::GetPC()
 
 void UPuzzlePlatformGameInstance::LoadMenu()
 {
-	if (!ensure(MenuClass)) return;
+	if (!ensure(MainMenuClass)) return;
 
-	auto MenuWidget = CreateWidget<UUserWidget>(this, MenuClass);
-	if (!ensure(MenuWidget)) return;
+	MainMenu = CreateWidget<UMainMenuWidget>(this, MainMenuClass);
+	if (!ensure(MainMenu)) return;
 
-	MenuWidget->AddToViewport();
-
-	auto PC = GetPC();
-	if (!ensure(PC != nullptr)) return;
-
-	FInputModeUIOnly InputModeData;
-	InputModeData.SetWidgetToFocus(MenuWidget->TakeWidget());
-	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	PC->SetInputMode(InputModeData);
-	PC->bShowMouseCursor = true;
+	MainMenu->Setup();
+	MainMenu->SetMainMenuInterface(this);
 }
 
 void UPuzzlePlatformGameInstance::Host()
 {
+	if (MainMenu != nullptr)
+	{
+		MainMenu->Cleanup();
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("HOST!"));
 	UEngine* Engine = GetEngine();
 	if (!ensure(Engine!= nullptr)) return;
@@ -70,6 +68,7 @@ void UPuzzlePlatformGameInstance::Host()
 	if (!ensure(World != nullptr)) return;
 
 	World->ServerTravel("/Game/ThirdPersonCPP/Maps/ThirdPersonExampleMap?listen -server");
+
 }
 
 void UPuzzlePlatformGameInstance::Join(const FString& Address)
