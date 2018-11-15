@@ -2,6 +2,8 @@
 
 #include "MainMenuWidget.h"
 #include "Components/Button.h"
+#include "Components/WidgetSwitcher.h"
+#include "Components/EditableText.h"
 
 
 bool UMainMenuWidget::Initialize()
@@ -12,9 +14,20 @@ bool UMainMenuWidget::Initialize()
 	if (!ensure(HostButton)) return false;
 	HostButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnHostButtonClicked);
 
+	if (!ensure(MainJoinButton)) return false;
+	MainJoinButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnMainJoinButtonClicked);
+
+	if (!ensure(JoinCancelButton)) return false;
+	JoinCancelButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnJoinCancelButtonClicked);
+
 	if (!ensure(JoinButton)) return false;
 	JoinButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnJoinButtonClicked);
 
+	if (!ensure(QuitButton)) return false;
+	QuitButton->OnClicked.AddDynamic(this, &UMainMenuWidget::OnQuitButtonClicked);
+
+
+	OpenMainMenu();
 
 	return true;
 }
@@ -22,39 +35,6 @@ bool UMainMenuWidget::Initialize()
 void UMainMenuWidget::SetMainMenuInterface(IMainMenuInterface* MenuInterface)
 {
 	MainMenuInterface = MenuInterface;
-}
-
-void UMainMenuWidget::Setup()
-{
-	AddToViewport();
-
-	auto World = GetWorld();
-	if (!ensure(World != nullptr)) return;
-
-	auto PC = World->GetFirstPlayerController();
-	if (!ensure(PC != nullptr)) return;
-
-	FInputModeUIOnly InputModeData;
-	InputModeData.SetWidgetToFocus(TakeWidget());
-	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	PC->SetInputMode(InputModeData);
-	PC->bShowMouseCursor = true;
-}
-
-void UMainMenuWidget::Cleanup()
-{
-	RemoveFromViewport();
-
-	auto World = GetWorld();
-	if (!ensure(World != nullptr)) return;
-
-	auto PC = World->GetFirstPlayerController();
-	if (!ensure(PC != nullptr)) return;
-
-	FInputModeGameOnly InputModeData;
-	PC->SetInputMode(InputModeData);
-
-	PC->bShowMouseCursor = false;
 }
 
 void UMainMenuWidget::OnHostButtonClicked()
@@ -67,12 +47,50 @@ void UMainMenuWidget::OnHostButtonClicked()
 	}
 }
 
+void UMainMenuWidget::OnMainJoinButtonClicked()
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnMainJoinButtonClicked"));
+
+	OpenJoinMenu();
+}
+
+void UMainMenuWidget::OnJoinCancelButtonClicked()
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnJoinCancelButtonClicked"));
+
+	OpenMainMenu();
+}
+
+
 void UMainMenuWidget::OnJoinButtonClicked()
 {
 	UE_LOG(LogTemp, Warning, TEXT("OnJoinButtonClicked"));
 
+	if (MainMenuInterface != nullptr && FieldInputIP != nullptr)
+	{
+		const FString& Address = FieldInputIP->GetText().ToString();
+		MainMenuInterface->Join(Address);
+	}
+}
+
+void UMainMenuWidget::OnQuitButtonClicked()
+{
 	if (MainMenuInterface != nullptr)
 	{
-		//MainMenuInterface->Join();
+		MainMenuInterface->QuitGame();
 	}
+}
+
+void UMainMenuWidget::OpenMainMenu()
+{
+	if (!ensure(MenuSwitcher)) return;
+	if (!ensure(MainMenu)) return;
+	MenuSwitcher->SetActiveWidget(MainMenu);
+}
+
+void UMainMenuWidget::OpenJoinMenu()
+{
+	if (!ensure(MenuSwitcher)) return;
+	if (!ensure(JoinMenu)) return;
+	MenuSwitcher->SetActiveWidget(JoinMenu);
 }
